@@ -1,0 +1,21 @@
+# Environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Raw extracted dataset download folder
+enron_spam_data/
+*.zip
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

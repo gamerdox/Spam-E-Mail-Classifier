@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mailbox &mdash; Naive Bayes Spam Detector</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Top bar -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="icon-btn" id="menuToggle" title="Show/hide folders">&#9776;</button>
+      <span class="logo"><span class="logo-badge">M</span> Mailbox</span>
+    </div>
+    <div class="topbar-search">
+      <input type="text" placeholder="Search mail" id="searchInput" autocomplete="off">
+    </div>
+    <div class="topbar-right">
+      <span class="model-badge" id="modelBadge" title="Click for model details">Naive Bayes model: loading&hellip;</span>
+    </div>
+  </header>
+
+  <div class="body-row">
+
+    <!-- Left nav -->
+    <nav class="sidebar" id="sidebar">
+      <button class="compose-btn" id="composeBtn">&#9998; Compose</button>
+
+      <ul class="nav-list">
+        <li class="nav-item active" data-folder="inbox"><span class="nav-icon">&#128229;</span> Inbox <span class="nav-count" id="count-inbox"></span></li>
+        <li class="nav-item" data-folder="starred"><span class="nav-icon">&#9733;</span> Starred <span class="nav-count" id="count-starred"></span></li>
+        <li class="nav-item" data-folder="sent"><span class="nav-icon">&#128228;</span> Sent <span class="nav-count" id="count-sent"></span></li>
+        <li class="nav-item" data-folder="spam"><span class="nav-icon">&#9888;</span> Spam <span class="nav-count" id="count-spam"></span></li>
+      </ul>
+
+      <div class="nav-divider"></div>
+
+      <ul class="nav-list">
+        <li class="nav-item" data-view="detector"><span class="nav-icon">&#128269;</span> Spam Detector</li>
+        <li class="nav-item" data-view="about"><span class="nav-icon">&#8505;</span> About this model</li>
+      </ul>
+    </nav>
+
+    <!-- Main content -->
+    <main class="main">
+
+      <!-- MAIL FOLDER VIEW (inbox / starred / sent / spam) -->
+      <section class="view" id="view-folder">
+        <div class="view-header">
+          <h2 id="folderTitle">Inbox</h2>
+          <span class="view-sub" id="folderSub">30 real emails, randomly sampled from a held-out set the model never trained on. Spam is highlighted in red.</span>
+        </div>
+        <div class="email-list" id="emailList">
+          <div class="loading">Loading&hellip;</div>
+        </div>
+      </section>
+
+      <!-- EMAIL DETAIL VIEW -->
+      <section class="view" id="view-detail" style="display:none;">
+        <button class="back-btn" id="backToFolder">&larr; Back</button>
+        <div id="emailDetailContent"></div>
+      </section>
+
+      <!-- SPAM DETECTOR VIEW -->
+      <section class="view" id="view-detector" style="display:none;">
+        <div class="view-header">
+          <h2>Spam Detector</h2>
+          <span class="view-sub">Write or paste any email below and check it &mdash; this does not touch your inbox or compose window. Classification runs here only.</span>
+        </div>
+
+        <div class="detector-grid">
+          <div class="detector-input">
+            <label class="field-label">Try an example:</label>
+            <div class="preset-row" id="presetRow"></div>
+
+            <label class="field-label" for="detectorSubject">Subject</label>
+            <input type="text" id="detectorSubject" placeholder="Email subject (optional)">
+
+            <label class="field-label" for="detectorBody">Email body</label>
+            <textarea id="detectorBody" rows="12" placeholder="Paste or write an email here to check whether it's spam..."></textarea>
+
+            <button class="primary-btn" id="checkBtn">Check for spam</button>
+          </div>
+
+          <div class="detector-result" id="detectorResult">
+            <div class="placeholder">Results and the Naive Bayes explanation will appear here.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ABOUT VIEW -->
+      <section class="view" id="view-about" style="display:none;">
+        <div class="view-header">
+          <h2>About this model</h2>
+          <span class="view-sub">How the classifier works, and how well it actually performs &mdash; computed fresh every time the server starts.</span>
+        </div>
+        <div id="aboutContent" class="about-content">
+          <div class="loading">Loading model stats&hellip;</div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- Compose modal -->
+<div class="modal-overlay" id="composeOverlay" style="display:none;">
+  <div class="modal compose-modal">
+    <div class="modal-header">
+      <span>New Message</span>
+      <button class="icon-btn" id="closeCompose">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input type="text" id="composeTo" placeholder="To">
+      <input type="text" id="composeSubject" placeholder="Subject">
+      <textarea id="composeBody" rows="10" placeholder="Compose your email..."></textarea>
+      <p class="compose-note">This compose window does not check for spam. Use the <strong>Spam Detector</strong> tab if you want to test whether a message would be classified as spam.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="primary-btn" id="sendComposeBtn">Send</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" style="display:none;"></div>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
