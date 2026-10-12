@@ -127,9 +127,17 @@ def build():
     ).sample(frac=1, random_state=RANDOM_SEED).reset_index(drop=True)
 
     # Training set = everything NOT in the demo pool.
-    train_df = df.drop(index=df.index.intersection(demo_df.index)).reset_index(drop=True)
-    # (demo_df rows came from `candidates`, a filtered copy of df, so their
-    # original df index is preserved and safe to drop by.)
+    #
+    # Dropping by the demo rows' original index is not enough: this real
+    # corpus is full of verbatim duplicate emails (the same bulk spam
+    # template, the same forwarded thread, sent to many Enron addresses).
+    # Index-only dropping only removes the one row that got sampled into
+    # the demo pool -- every *other* row with that exact same text stays in
+    # training, so the model would still see the literal text of every demo
+    # email during training under a different row index. Dropping by text
+    # instead removes every copy, so none of the 35 demo emails' content
+    # appears in training at all.
+    train_df = df[~df["text"].isin(set(demo_df["text"]))].reset_index(drop=True)
 
     os.makedirs(DATA_DIR, exist_ok=True)
     train_df[["text", "label"]].to_csv(TRAIN_CSV, index=False)

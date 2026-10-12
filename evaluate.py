@@ -9,6 +9,7 @@ Run after prepare_dataset.py:
 import csv
 import random
 import sys
+from typing import Dict, List, Tuple
 
 from classifier import BayesianSpamClassifier
 
@@ -25,17 +26,35 @@ def load_rows(path):
 
 
 def stratified_split(rows, test_fraction, seed):
+    """Stratified 80/20 split, grouped by exact email text first.
+
+    The real corpus has thousands of verbatim duplicate emails (the same
+    forwarded thread, the same bulk spam template sent to many Enron
+    addresses). Splitting row-by-row would let a duplicate land on both
+    sides, so the model could see the *exact* text of a "held-out" test
+    email during training -- that's leakage, not generalization, and it
+    quietly inflates the reported accuracy. Grouping by text first means
+    every copy of a duplicate email goes to the same side of the split, so
+    nothing in the test set was literally present in training."""
     rng = random.Random(seed)
-    by_label = {"spam": [], "ham": []}
+
+    groups: Dict[str, List[Tuple[str, str]]] = {}
     for text, label in rows:
-        by_label[label].append((text, label))
+        groups.setdefault(text, []).append((text, label))
+
+    by_label: Dict[str, List[List[Tuple[str, str]]]] = {"spam": [], "ham": []}
+    for group in groups.values():
+        by_label[group[0][1]].append(group)
+
     train, test = [], []
-    for label, items in by_label.items():
-        items = items[:]
-        rng.shuffle(items)
-        cut = int(len(items) * (1 - test_fraction))
-        train += items[:cut]
-        test += items[cut:]
+    for label, label_groups in by_label.items():
+        label_groups = label_groups[:]
+        rng.shuffle(label_groups)
+        cut = int(len(label_groups) * (1 - test_fraction))
+        for group in label_groups[:cut]:
+            train.extend(group)
+        for group in label_groups[cut:]:
+            test.extend(group)
     rng.shuffle(train)
     rng.shuffle(test)
     return train, test
